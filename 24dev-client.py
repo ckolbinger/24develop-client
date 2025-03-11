@@ -1,0 +1,77 @@
+import argparse
+import yaml
+from libs.dns import *
+from libs.ssl import *
+from libs.workfile import *
+
+
+def main():
+    # Create the ArgumentParser object
+    parser = argparse.ArgumentParser(description="CLI argument parsing example using argparse.")
+    parser.add_argument("--token", type=str, help="api token")  # Add arguments
+    parser.add_argument("--url", type=str, help="api token")  # Add arguments
+    parser.add_argument("--unit", type=str, help="unit: team,domains,dns,ssl")
+    parser.add_argument("--domain", type=str, help="domain name")
+    parser.add_argument("--domain-id", type=str, help="id of domain name")
+    parser.add_argument("--team", type=str, help="team name")
+    parser.add_argument("--team_id", type=str, help="team id to use, first team if not specified")
+    parser.add_argument("--action", type=str, help="action list,add,delete,update,commit")
+    parser.add_argument("--config", type=str, help="config file")
+    parser.add_argument("--work-file", type=str, help="todo config file")
+    parser.add_argument("--record-type", type=str, help="A,AAAA,TXT,MX,SRV,NS", default="A")
+    parser.add_argument("--record-name", type=str, help="subdomain name fqdn")
+    parser.add_argument("--record-ttl", type=str, help="subdomain name fqdn", default=600)
+    parser.add_argument("--record-content", type=str, help="destination ip or domain")
+    parser.add_argument("--record-prio", type=str, help="prio MX or SRV")
+    parser.add_argument("--record-weight", type=str, help="weight SRV only")
+    parser.add_argument("--record-port", type=str, help="port SRV only")
+    parser.add_argument("--record-id", type=str, help="for update or delete")
+    parser.add_argument("--record-description", type=str, help="comment for record")
+
+    # Parse the arguments
+    args = parser.parse_args()
+    config = {}
+    work_config = {}
+    if "config" in args and args.config:
+        config = read_config(args.config)
+    if "work_file" in args and args.work_file:
+        work_config = read_config(args.work_file)
+    if work_config:
+        config.update(work_config)
+    pprint(config)
+    for arg in vars(args):
+        if getattr(args, arg):
+            config[arg] = getattr(args, arg)
+
+    pprint(config)
+    if not args.work_file:
+        # config["domain"] = {}
+        # config["domain"][args.domain] = {}
+        # config["domain"][args.domain][args.unit] = []
+        # config["domain"][args.domain][args.unit].append(args)
+        if args.unit == "team":
+            my_team = Team(config)
+            my_team.run()
+        elif args.unit == "domain":
+            my_domain = Domain(config)
+            my_domain.run()
+        elif args.unit == "dns":
+            my_dns = Dns(config)
+            my_dns.run()
+        elif args.unit == "ssl":
+            my_ssl = MySsl(config)
+            my_ssl.run()
+    else:
+        work_file_client = Workfile(config)
+        if work_file_client.start_work_script():
+            print("work script done")
+
+
+def read_config(config_file):
+    with open(config_file, "r") as file:
+        config = yaml.safe_load(file)  # Load safely to avoid exploits
+    return config
+
+
+if __name__ == "__main__":
+    main()
