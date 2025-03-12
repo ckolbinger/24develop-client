@@ -28,15 +28,6 @@ class Dns(Basic):
 
         return data
 
-    def get_domain_id(self):
-        url = self.url + '/api/domain/list/'
-        data = self.send_get(url)
-        if data and 'domains' in data:
-            for domain in data['domains']:
-                if domain['name'] == self.config['domain']:
-                    self.domain_id = domain['id']
-                    return True
-        return False
 
     def add(self):
         xx = self.create_send_data()

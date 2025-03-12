@@ -10,7 +10,6 @@ class Basic:
     domain_id = None
     team_id = None
 
-
     def __init__(self, config):
         self.config = config
         self.token = config['token']
@@ -19,7 +18,6 @@ class Basic:
 
     def run(self):
         self.selector()
-
 
     def send_post(self, url, data):
         pprint(data)
@@ -41,6 +39,16 @@ class Basic:
             print(resp.text)
             print("record not found")
 
+    def get_domain_id(self):
+        url = self.url + '/api/domain/list/'
+        data = self.send_get(url)
+        if data and 'domains' in data:
+            for domain in data['domains']:
+                if domain['name'] == self.config['domain']:
+                    self.domain_id = domain['id']
+                    return True
+        return False
+
     def config(self):
         pass
 
@@ -60,6 +68,9 @@ class Basic:
             self.update()
         elif self.config['action'] == 'commit':
             self.commit()
+        elif self.config['action'] == 'export':
+            self.export()
+
         return True
 
     def list(self):
@@ -82,3 +93,6 @@ class Basic:
         print("update not implemented")
         pass
 
+    def export(self):
+        print("update not implemented")
+        pass
