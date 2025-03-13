@@ -21,6 +21,7 @@ class Basic:
 
     def send_post(self, url, data):
         pprint(data)
+        print(url)
         resp = requests.post(url, json=data, headers=self.headers, verify=False)
         if resp.status_code == 200:
             data = resp.json()
@@ -30,6 +31,7 @@ class Basic:
             print(resp.text)
 
     def send_get(self, url):
+        print(url)
         resp = requests.get(url, headers=self.headers, verify=False)
         if resp.status_code == 200:
             data = resp.json()
@@ -90,9 +92,9 @@ class Basic:
         pass
 
     def commit(self):
-        print("update not implemented")
+        print("commit not implemented")
         pass
 
     def export(self):
-        print("update not implemented")
+        print("export not implemented")
         pass

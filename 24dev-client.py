@@ -1,7 +1,5 @@
 import argparse
 import yaml
-from libs.dns import *
-from libs.ssl import *
 from libs.workfile import *
 
 
@@ -17,7 +15,7 @@ def main():
     parser.add_argument("--team_id", type=str, help="team id to use, first team if not specified")
     parser.add_argument("--action", type=str, help="action list,add,delete,update,commit,export")
     parser.add_argument("--config", type=str, help="config file")
-    parser.add_argument("--work-file", type=str, help="todo config file")
+    parser.add_argument("--batch-mode", action="store_true", help="use the config file in batch mode")
     parser.add_argument("--record-type", type=str, help="A,AAAA,TXT,MX,SRV,NS", default="A")
     parser.add_argument("--record-name", type=str, help="subdomain name fqdn")
     parser.add_argument("--record-ttl", type=str, help="subdomain name fqdn", default=600)
@@ -33,7 +31,8 @@ def main():
     parser.add_argument("--cert-auto-renew", action="store_true", help="cert auto renew or not")
     parser.add_argument("--cert-subdomain", type=str, nargs="+",
                         help="cert subdomain must exist in the dns only if not wildcard")
-    parser.add_argument("--cert-folder-name", type=str, help="cert folder name for export")
+    parser.add_argument("--cert-folder-name", type=str, help="cert folder name for export",default=None)
+    parser.add_argument("--cert-base-folder", type=str, help="cert folder name for export", default='/tmp/certs')
 
     # Parse the arguments
     args = parser.parse_args()
@@ -41,17 +40,13 @@ def main():
     work_config = {}
     if "config" in args and args.config:
         config = read_config(args.config)
-    if "work_file" in args and args.work_file:
-        work_config = read_config(args.work_file)
-    if work_config:
-        config.update(work_config)
     pprint(config)
     for arg in vars(args):
         if getattr(args, arg):
             config[arg] = getattr(args, arg)
 
-    pprint(config)
-    if not args.work_file:
+
+    if not args.batch_mode:
         # config["domain"] = {}
         # config["domain"][args.domain] = {}
         # config["domain"][args.domain][args.unit] = []
