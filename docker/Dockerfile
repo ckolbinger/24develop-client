@@ -1,5 +1,5 @@
 FROM debian:bookworm-slim AS base
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update
 RUN apt-get install -y python3 curl python3-dateutil bash python3-certifi\

@@ -3,7 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: dev
+      target: prod
+    image: 24developcom/24develop-client
     command: python3 24dev-client.py --config /opt/client/config/config.yml --batch-mode
     volumes:
       - .:/opt/client
