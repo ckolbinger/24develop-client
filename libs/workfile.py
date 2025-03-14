@@ -36,13 +36,15 @@ class Workfile(Basic):
                 my_data = self.config['domain'][domain]['ssl']
                 self.sub_config['domain_id'] = domain_id
                 self.sub_config['domain'] = domain
+                self.sub_config['disable_ssl_verify'] = self.config[
+                    'disable_ssl_verify'] if 'disable_ssl_verify' in self.config else False
                 self.sub_config['cert_base_folder'] = self.config['cert_base_folder']
-                self.sub_config['cert_folder_name'] = my_data['folder_name'] if 'folder_name' in my_data else '/tmp/ssl/'
+                self.sub_config['cert_folder_name'] = my_data[
+                    'folder_name'] if 'folder_name' in my_data else None
                 self.sub_config['cert_subdomain'] = my_data['subdomains'] if 'subdomains' in my_data else []
                 self.sub_config['cert_production'] = my_data['is_production'] if 'is_production' in my_data else False
                 self.sub_config['cert_wildcard'] = my_data['is_wildcard'] if 'is_wildcard' in my_data else False
                 self.sub_config['cert_auto_renew'] = my_data['is_auto_renew'] if 'is_auto_renew' in my_data else False
-
 
                 pprint(self.sub_config)
                 self.ssl_client = MySsl(self.sub_config)

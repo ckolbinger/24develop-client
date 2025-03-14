@@ -3,6 +3,7 @@ from libs.basic import *
 
 class Domain(Basic):
     domain_list = {}
+    domain_is_needed = True
 
     def __init__(self, config):
         super().__init__(config)
@@ -11,6 +12,7 @@ class Domain(Basic):
     def list(self):
         url = self.url + '/api/domain/list/'
         data = self.send_get(url)
+        print("list domains")
         if data and 'domains' in data:
             for domain in data['domains']:
                 print(domain['id'], domain['name'])

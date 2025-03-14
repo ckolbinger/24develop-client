@@ -68,7 +68,7 @@ create a config in yaml style like this, it will only add entrys, delete is not 
 ```yaml
 url: "https://www.24develop.com"
 token: ""
-certificate_base_folder: /tmp/data
+cert_base_folder: /opt/client/certs
 domain:
   d.24develop.com:
     dns:
@@ -116,4 +116,25 @@ domain:
       folder_name: 'www.24develop.de'
       subdomains:
         - www
+```
+
+
+## docker compose setup
+
+```yaml
+services:
+  24develop-client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: prod
+    command: python 24dev-client.py --config /opt/client/config/config.yml --batch-mode
+    volumes:
+      - ./certs:/opt/client/certs
+      - ./test/workconfig.yml:/opt/client/config/config.yml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"    # Maximum size of a log file (10 MB in this case)
+        max-file: "3"      # Maximum number of log files to keep
 ```

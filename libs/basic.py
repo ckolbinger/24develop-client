@@ -9,20 +9,27 @@ class Basic:
     config = {}
     domain_id = None
     team_id = None
+    verify_request = True
+    domain_is_needed = True
 
     def __init__(self, config):
         self.config = config
         self.token = config['token']
         self.url = config['url']
         self.headers = {'Authorization': 'Token ' + self.token, "Content-Type": "application/json"}
-
+        if 'disable_ssl_verify' in config and config['disable_ssl_verify']:
+            self.verify_request = False
     def run(self):
+        if self.domain_is_needed:
+            print("no domain defined")
+            if not self.domain_id:
+                return False
         self.selector()
 
     def send_post(self, url, data):
         pprint(data)
         print(url)
-        resp = requests.post(url, json=data, headers=self.headers, verify=False)
+        resp = requests.post(url, json=data, headers=self.headers, verify=self.verify_request)
         if resp.status_code == 200:
             data = resp.json()
             return data
@@ -32,7 +39,7 @@ class Basic:
 
     def send_get(self, url):
         print(url)
-        resp = requests.get(url, headers=self.headers, verify=False)
+        resp = requests.get(url, headers=self.headers, verify=self.verify_request)
         if resp.status_code == 200:
             data = resp.json()
             return data

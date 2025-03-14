@@ -5,12 +5,16 @@ class Dns(Basic):
     domain_id = None
     record_id = None
     domain_records = {}
+    domain_is_needed = True
 
     def __init__(self, config):
         super().__init__(config)
         if 'domain_id' not in config or not config['domain_id']:
-            print(" get domains")
-            self.get_domain_id()
+            print("get domains")
+            if not self.get_domain_id():
+                print("domain not found")
+                return
+
         else:
             self.domain_id = config['domain_id']
         if 'record_id' in config and config['record_id']:
@@ -43,7 +47,7 @@ class Dns(Basic):
     def list(self):
         url = self.url + '/api/record/' + self.domain_id + '/'
         data = self.send_get(url)
-
+        print("list records")
         if data and 'records' in data:
             for record in data['records']:
                 print(record['id'], record['name'], record['type'], record['content'], record['ttl'],

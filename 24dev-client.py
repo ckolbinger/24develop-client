@@ -32,7 +32,8 @@ def main():
     parser.add_argument("--cert-subdomain", type=str, nargs="+",
                         help="cert subdomain must exist in the dns only if not wildcard")
     parser.add_argument("--cert-folder-name", type=str, help="cert folder name for export",default=None)
-    parser.add_argument("--cert-base-folder", type=str, help="cert folder name for export", default='/tmp/certs')
+    parser.add_argument("--cert-base-folder", type=str, help="cert folder name for export", default=None)
+    parser.add_argument("--disable-ssl-verify", action="store_true", help="disable ssl verify for https requests")
 
     # Parse the arguments
     args = parser.parse_args()
@@ -40,17 +41,12 @@ def main():
     work_config = {}
     if "config" in args and args.config:
         config = read_config(args.config)
-    pprint(config)
+
     for arg in vars(args):
         if getattr(args, arg):
             config[arg] = getattr(args, arg)
 
-
     if not args.batch_mode:
-        # config["domain"] = {}
-        # config["domain"][args.domain] = {}
-        # config["domain"][args.domain][args.unit] = []
-        # config["domain"][args.domain][args.unit].append(args)
         if args.unit == "team":
             my_team = Team(config)
             my_team.run()

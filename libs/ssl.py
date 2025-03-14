@@ -4,7 +4,7 @@ from libs.basic import *
 import os
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import time
 
 
@@ -12,6 +12,7 @@ class MySsl(Basic):
     domain_id = None
     cert_id = None
     certificate_records = {}
+    domain_is_needed = True
 
     def __init__(self, config):
         super().__init__(config)
@@ -26,6 +27,7 @@ class MySsl(Basic):
     def list(self):
         url = self.url + '/api/cert/list/' + self.domain_id + '/'
         data = self.send_get(url)
+        print("list certificates")
         if data['success']:
             for cert in data['certificates']:
                 print(cert['id'], cert['name'], cert['valid_to'])
@@ -56,7 +58,7 @@ class MySsl(Basic):
     def export(self):
         url = self.url + '/api/cert/get/' + self.domain_id + '/' + self.cert_id + '/'
         data = self.send_get(url)
-        pprint(data)
+
         if data['success']:
             my_dir = self._build_folder_name()
             os.makedirs(my_dir, exist_ok=True)
@@ -66,6 +68,7 @@ class MySsl(Basic):
             with open(my_dir + '/privkey.pem', 'w') as f:
                 f.write(data['certificate']['private_key'])
                 f.close()
+            print("certificate exported to " + my_dir)
 
     def create_certificate_name(self) -> str:
         name = ''
@@ -103,6 +106,8 @@ class MySsl(Basic):
             # validate ssl cert
             if not self.check_valid_to():
                 self.init_revalidate()
+            else:
+                print("certificate is valid")
         else:
             self.export()
 
@@ -115,7 +120,7 @@ class MySsl(Basic):
             try:
                 x509_cert = x509.load_pem_x509_certificate(cert.encode('utf-8'), default_backend())
                 utc_dt = datetime.now(timezone.utc)
-                if x509_cert.not_valid_after_utc > utc_dt:
+                if x509_cert.not_valid_after_utc - timedelta(days=2) > utc_dt:
                     return True
             except Exception as e:
                 print(e)

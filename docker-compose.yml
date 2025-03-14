@@ -1,0 +1,16 @@
+services:
+  24develop-client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    command: python 24dev-client.py --config /opt/client/config/config.yml --batch-mode
+    volumes:
+      - .:/opt/client
+      - ./certs:/opt/client/certs
+      - ./test/workconfig.yml:/opt/client/config/config.yml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"    # Maximum size of a log file (10 MB in this case)
+        max-file: "3"      # Maximum number of log files to keep
