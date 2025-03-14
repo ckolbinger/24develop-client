@@ -145,4 +145,4 @@ class MySsl(Basic):
     def _build_folder_name(self) -> str:
         if not self.config['cert_folder_name']:
             self.config['cert_folder_name'] = self.create_certificate_name().replace(' ', '_')
-        return os.path.join(self.config['cert_base_folder'], self.config['cert_folder_name'])
+        return str(os.path.join(self.config['cert_base_folder'], self.config['cert_folder_name']))

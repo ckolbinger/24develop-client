@@ -31,7 +31,7 @@ class Workfile(Basic):
         for domain in self.config['domain']:
             if 'ssl' not in self.config['domain'][domain]:
                 continue
-            domain_id = self.domain_client.get_domain_id(domain)
+            domain_id = self.domain_client.get_or_create_domain(domain)
             if domain_id:
                 my_data = self.config['domain'][domain]['ssl']
                 self.sub_config['domain_id'] = domain_id
@@ -46,7 +46,6 @@ class Workfile(Basic):
                 self.sub_config['cert_wildcard'] = my_data['is_wildcard'] if 'is_wildcard' in my_data else False
                 self.sub_config['cert_auto_renew'] = my_data['is_auto_renew'] if 'is_auto_renew' in my_data else False
 
-                pprint(self.sub_config)
                 self.ssl_client = MySsl(self.sub_config)
                 self.ssl_client.list()
                 if not self.ssl_client.check_certificate_exists_remote():
@@ -60,7 +59,7 @@ class Workfile(Basic):
     def run_worker_dns(self):
         self.domain_client.list()
         for domain in self.config['domain']:
-            domain_id = self.domain_client.get_domain_id(domain)
+            domain_id = self.domain_client.get_or_create_domain(domain)
             if domain_id:
                 self.sub_config['domain_id'] = domain_id
                 self.sub_config['domain'] = domain

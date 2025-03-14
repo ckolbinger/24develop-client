@@ -39,18 +39,19 @@ class Domain(Basic):
 
     def check_domain_exists(self, domain_name):
         if domain_name in self.domain_list:
+            self.config['domain'] = domain_name
             return True
         return False
 
-    def get_domain_id(self, domain_name):
-        if domain_name in self.domain_list:
-            return self.domain_list[domain_name]
+    def get_domain_id(self):
+        if self.config['domain'] in self.domain_list:
+            return self.domain_list[self.config['domain']]
 
         return False
 
     def get_or_create_domain(self, domain_name):
         if self.check_domain_exists(domain_name):
-            return self.get_domain_id(domain_name)
+            return self.get_domain_id()
         else:
             self.get_team_id()
             self.config['domain'] = domain_name
