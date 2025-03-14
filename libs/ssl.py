@@ -119,8 +119,9 @@ class MySsl(Basic):
                 f.close()
             try:
                 x509_cert = x509.load_pem_x509_certificate(cert.encode('utf-8'), default_backend())
-                utc_dt = datetime.now(timezone.utc)
-                if x509_cert.not_valid_after_utc - timedelta(days=2) > utc_dt:
+                # utc time with debian python packages not available
+                # 'builtins.Certificate' object has no attribute 'not_valid_after_utc'
+                if x509_cert.not_valid_after - timedelta(days=2) > datetime.now():
                     return True
             except Exception as e:
                 print(e)

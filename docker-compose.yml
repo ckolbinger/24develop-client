@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       target: dev
-    command: python 24dev-client.py --config /opt/client/config/config.yml --batch-mode
+    command: python3 24dev-client.py --config /opt/client/config/config.yml --batch-mode
     volumes:
       - .:/opt/client
       - ./certs:/opt/client/certs

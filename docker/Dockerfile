@@ -1,19 +1,16 @@
-FROM debian:bookworm AS base
+FROM debian:bookworm-slim AS base
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update
-RUN apt-get install -y python3 python3-pip curl python3-dateutil bash python3-venv
+RUN apt-get install -y python3 curl python3-dateutil bash python3-certifi\
+     python3-cffi python3-charset-normalizer python3-cryptography python3-pycparser python3-yaml python3-requests python3-urllib3
 ADD requirements.txt /tmp/requirements.txt
 RUN install -d /opt/python /opt/client /opt/client/certs /opt/client/config
 WORKDIR /opt/client
 RUN install -d /opt/python/ && chown -R www-data:www-data /opt/python/
+RUN apt clean && apt autoremove --purge
+RUN whereis python3
 USER www-data
-RUN python3 -m venv /opt/python
-RUN /opt/python/bin/pip3 install --upgrade pip
-RUN /opt/python/bin/pip3 install -r /tmp/requirements.txt
-ENV PATH="/opt/python/bin/:$PATH"
-
-#------------------------------------
 
 
 FROM base AS dev
