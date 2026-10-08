@@ -1,5 +1,24 @@
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from pprint import pprint
+
+# connect / read timeout in seconds
+REQUEST_TIMEOUT = (10, 60)
+_session = None
+
+
+def get_session():
+    # one shared session, reuses the tls connection instead of a new handshake per request
+    global _session
+    if _session is None:
+        # retry only failures before the request is sent (connect, tls handshake),
+        # never after it reached the server: commit / delete / disable are GET but not idempotent
+        retry = Retry(total=5, connect=5, other=5, read=0, status=0, backoff_factor=1, raise_on_status=False)
+        _session = requests.Session()
+        _session.mount('https://', HTTPAdapter(max_retries=retry))
+        _session.mount('http://', HTTPAdapter(max_retries=retry))
+    return _session
 
 
 class Basic:
@@ -38,12 +57,21 @@ class Basic:
         if log_data:
             pprint(data)
         print(url)
-        resp = requests.post(url, json=data, headers=self.headers, verify=self.verify_request)
+        try:
+            resp = get_session().post(url, json=data, headers=self.headers, verify=self.verify_request,
+                                      timeout=REQUEST_TIMEOUT)
+        except requests.RequestException as e:
+            print("request failed: " + str(e))
+            return {'success': False}
         return self.handle_response(resp)
 
     def send_get(self, url):
         print(url)
-        resp = requests.get(url, headers=self.headers, verify=self.verify_request)
+        try:
+            resp = get_session().get(url, headers=self.headers, verify=self.verify_request, timeout=REQUEST_TIMEOUT)
+        except requests.RequestException as e:
+            print("request failed: " + str(e))
+            return {'success': False}
         return self.handle_response(resp)
 
     def handle_response(self, resp):
