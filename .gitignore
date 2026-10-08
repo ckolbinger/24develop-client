@@ -6,3 +6,4 @@
 /run/
 credentials.yml
 zone_state.json
+/certs/
