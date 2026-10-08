@@ -4,3 +4,5 @@
 **/__pycache__/*
 *.pyc
 /run/
+credentials.yml
+zone_state.json

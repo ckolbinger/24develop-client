@@ -7,14 +7,18 @@ def main():
     # Create the ArgumentParser object
     parser = argparse.ArgumentParser(description="CLI argument parsing example using argparse.")
     parser.add_argument("--token", type=str, help="api token")  # Add arguments
-    parser.add_argument("--url", type=str, help="api token")  # Add arguments
+    parser.add_argument("--secret", type=str, help="api token secret, uses ApiToken auth if set")
+    parser.add_argument("--url", type=str, help="api url")  # Add arguments
     parser.add_argument("--unit", type=str, help="unit: team,domains,dns,ssl")
     parser.add_argument("--domain", type=str, help="domain name")
     parser.add_argument("--domain-id", type=str, help="id of domain name")
     parser.add_argument("--team", type=str, help="team name")
     parser.add_argument("--team_id", type=str, help="team id to use, first team if not specified")
-    parser.add_argument("--action", type=str, help="action list,add,delete,update,commit,export")
+    parser.add_argument("--action", type=str, help="action list,add,delete,update,commit,export,import")
     parser.add_argument("--config", type=str, help="config file")
+    parser.add_argument("--credentials", type=str, help="credentials file with url, token and secret")
+    parser.add_argument("--zone-file", type=str, help="bind zone file for domain import or add")
+    parser.add_argument("--auto-commit", action="store_true", help="push the zone to the dns servers after the change")
     parser.add_argument("--batch-mode", action="store_true", help="use the config file in batch mode")
     parser.add_argument("--record-type", type=str, help="A,AAAA,TXT,MX,SRV,NS", default="A")
     parser.add_argument("--record-name", type=str, help="subdomain name fqdn")
@@ -39,8 +43,11 @@ def main():
     args = parser.parse_args()
     config = {}
     work_config = {}
-    if "config" in args and args.config:
-        config = read_config(args.config)
+    # credentials first, the config file and cli arguments override them
+    if args.credentials:
+        config.update(read_config(args.credentials))
+    if args.config:
+        config.update(read_config(args.config))
 
     for arg in vars(args):
         if getattr(args, arg):
@@ -68,7 +75,7 @@ def main():
 def read_config(config_file):
     with open(config_file, "r") as file:
         config = yaml.safe_load(file)  # Load safely to avoid exploits
-    return config
+    return config or {}
 
 
 if __name__ == "__main__":

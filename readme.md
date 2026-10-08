@@ -6,14 +6,18 @@ cli client for 24develop.com dns and certification api
 | Argument | Type | Description | Default |
 | --- | --- | --- | --- |
 | --token | str | API token for authentication. | - |
+| --secret | str | API token secret. If set, `ApiToken <token>:<secret>` is used, otherwise the legacy `Token <token>`. | - |
 | --url | str | API base URL. | - |
 | --unit | str | A unit to operate on, e.g., team, domains, dns, ssl. | - |
 | --domain | str | Domain name to act on. | - |
 | --domain-id | str | ID associated with the domain name. | - |
 | --team | str | Name of the team. | - |
 | --team_id | str | ID of the team to use (defaults to the first team if not specified). | - |
-| --action | str | Action to perform: list, add, delete, update, commit, export. | - |
+| --action | str | Action to perform: list, add, delete, update, commit, export, import. | - |
+| --zone-file | str | BIND zone file for `--unit domain --action import` (or `add` to create the domain with a zone). | - |
+| --auto-commit | N/A | Push the zone to the DNS servers after the change (domain add/import, dns add/update). | False |
 | --config | str | Path to the configuration file. | - |
+| --credentials | str | Path to the credentials file (url, token, secret). | - |
 | --batch-mode | N/A | Use the configuration file in batch mode. | False |
 
 ### **DNS Record Arguments**
@@ -56,6 +60,12 @@ python script_name.py --token your_api_token --url https://api.example.com --uni
     --record-content 192.168.1.1
 ```
 
+import a zone file into an existing domain (SOA records in the file are ignored)
+```bash
+python script_name.py --credentials credentials.yml --unit domain --action import \
+    --domain example.com --zone-file example.com.zone --auto-commit
+```
+
 download ssl certificate
 ```bash
 python script_name.py --token your_api_token --url https://api.example.com --unit ssl --action export \
@@ -63,11 +73,20 @@ python script_name.py --token your_api_token --url https://api.example.com --uni
 ```
 
 
-## batch mode config driven deployment
-create a config in yaml style like this, it will only add entrys, delete is not implemented yet.
+## config files
+credentials and configuration are kept in two files, see `credentials.yml.dist` and `config.yml.dist`.
+values are merged in this order, later ones win: credentials file, config file, cli arguments.
+
+credentials file (keep it out of git, `credentials.yml` is in `.gitignore`)
 ```yaml
 url: "https://www.24develop.com"
 token: ""
+secret: ""   # leave empty for a legacy token
+```
+
+## batch mode config driven deployment
+create a config in yaml style like this, it will only add entrys, delete is not implemented yet.
+```yaml
 cert_base_folder: /opt/client/certs
 domain:
   d.24develop.com:
@@ -119,7 +138,36 @@ domain:
 ```
 
 
+### zone files in batch mode
+a domain can import a BIND zone file on every run with `zone_file`. relative paths are relative to the config file.
+the zone is imported before the `dns` entries are compared, so records from the zone are not added twice.
+SOA records in the zone file are ignored, the SOA is managed by the server.
+```yaml
+domain:
+  example.com:
+    zone_file: zones/example.com.zone
+    auto_commit: true   # push to the dns servers after the import, default true
+    dns:
+      - name: www
+        type: A
+        value:
+          - 192.168.1.1
+```
+a zone file is only imported when it changed since the last successful import. the sha256 of each imported
+zone file is stored in `zone_state.json` next to the config file, set `zone_state_file` to use another path.
+delete the state file to force a new import of all zones. if the state file can not be written, a warning is
+printed and the zones are imported on every run.
+
+in docker mount the zone files next to the config, e.g. `./test/zones:/opt/client/config/zones:ro`.
+the container user must be able to write the state file, see the docker compose setup.
+
 ## docker compose setup
+the client runs as user and group id 33 (`www-data`) by default. it writes the certificates and the zone state file,
+so the mounted folders must be writable by that id. to run as your own user set the ids in `.env`, see `.env.dist`
+```bash
+echo "CLIENT_UID=$(id -u)" > .env
+echo "CLIENT_GID=$(id -g)" >> .env
+```
 
 ```yaml
 services:
@@ -128,9 +176,11 @@ services:
       context: .
       dockerfile: docker/Dockerfile
       target: prod
-    command: python 24dev-client.py --config /opt/client/config/config.yml --batch-mode
+    user: "${CLIENT_UID:-33}:${CLIENT_GID:-33}"
+    command: python 24dev-client.py --credentials /opt/client/config/credentials.yml --config /opt/client/config/config.yml --batch-mode
     volumes:
       - ./certs:/opt/client/certs
+      - ./test/credentials.yml:/opt/client/config/credentials.yml:ro
       - ./test/workconfig.yml:/opt/client/config/config.yml
     logging:
       driver: "json-file"

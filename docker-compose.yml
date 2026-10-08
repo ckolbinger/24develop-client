@@ -5,10 +5,13 @@ services:
       dockerfile: docker/Dockerfile
       target: prod
     image: 24developcom/24develop-client
-    command: python3 24dev-client.py --config /opt/client/config/config.yml --batch-mode
+    # user / group id the client runs as, default www-data (33), set CLIENT_UID / CLIENT_GID in .env
+    user: "${CLIENT_UID:-33}:${CLIENT_GID:-33}"
+    command: python3 24dev-client.py --credentials /opt/client/config/credentials.yml --config /opt/client/config/config.yml --batch-mode
     volumes:
       - .:/opt/client
       - ./certs:/opt/client/certs
+      - ./test/credentials.yml:/opt/client/config/credentials.yml:ro
       - ./test/workconfig.yml:/opt/client/config/config.yml
     logging:
       driver: "json-file"

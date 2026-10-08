@@ -23,7 +23,7 @@ class Dns(Basic):
     def create_send_data(self):
         data = {}
         for k, v in self.config.items():
-            if k.startswith("record_"):
+            if k.startswith("record_") and k != "record_id":
                 data[k[7:]] = v
         if 'auto_commit' in self.config and self.config['auto_commit']:
             data['commit'] = True

@@ -11,7 +11,7 @@ import time
 class MySsl(Basic):
     domain_id = None
     cert_id = None
-    certificate_records = {}
+    certificate_records = []
     domain_is_needed = True
 
     def __init__(self, config):
@@ -28,10 +28,11 @@ class MySsl(Basic):
         url = self.url + '/api/cert/list/' + self.domain_id + '/'
         data = self.send_get(url)
         print("list certificates")
+        self.certificate_records = []
         if data['success']:
             for cert in data['certificates']:
                 print(cert['id'], cert['name'], cert['valid_to'])
-                self.certificate_records[cert['name']] = cert['id']
+                self.certificate_records.append(cert)
         else:
             print("no certificates found")
 
@@ -41,7 +42,6 @@ class MySsl(Basic):
             'is_production': self.config['cert_production'] if 'cert_production' in self.config else False,
             'is_auto_renew': self.config['cert_auto_renew'] if 'cert_auto_renew' in self.config else False,
             'subdomains': self.config['cert_subdomain'] if 'cert_subdomain' in self.config else [],
-            'folder_name': self.config['cert_folder_name'] if 'cert_folder_name' in self.config else None
         }
         url = self.url + '/api/cert/create/' + self.domain_id + '/'
         data = self.send_post(url, data)
@@ -90,13 +90,30 @@ class MySsl(Basic):
 
         return name.strip()
 
-    def check_certificate_exists_remote(self):
-        cert_name = self.create_certificate_name()
-        print(cert_name)
+    def create_certificate_domains(self) -> set:
+        domain = self.config['domain']
+        names = set()
+        if self.config.get('cert_wildcard'):
+            names.add(domain)
+            names.add('*.' + domain)
+        for d in self.config.get('cert_subdomain') or []:
+            names.add(d if d.endswith(domain) else d + '.' + domain)
+        return names
 
-        if cert_name in self.certificate_records:
-            self.cert_id = self.certificate_records[cert_name]
-            return True
+    def check_certificate_exists_remote(self):
+        # remote name is a comma separated list of the cert domains, e.g. "example.com, *.example.com"
+        wanted = self.create_certificate_domains()
+        print(', '.join(sorted(wanted)))
+        for cert in self.certificate_records:
+            if bool(cert['is_production']) != bool(self.config.get('cert_production')):
+                continue
+            if bool(cert['is_wildcard']) != bool(self.config.get('cert_wildcard')):
+                continue
+            remote = {n.strip() for n in cert['name'].split(',') if n.strip()}
+            # the server may add the base domain itself
+            if wanted <= remote and remote - wanted <= {self.config['domain']}:
+                self.cert_id = cert['id']
+                return True
         return False
 
     def check_certificate_exists_local(self):
@@ -144,6 +161,6 @@ class MySsl(Basic):
             time.sleep(20)
 
     def _build_folder_name(self) -> str:
-        if not self.config['cert_folder_name']:
+        if not self.config.get('cert_folder_name'):
             self.config['cert_folder_name'] = self.create_certificate_name().replace(' ', '_')
-        return str(os.path.join(self.config['cert_base_folder'], self.config['cert_folder_name']))
+        return str(os.path.join(self.config.get('cert_base_folder') or '', self.config['cert_folder_name']))
