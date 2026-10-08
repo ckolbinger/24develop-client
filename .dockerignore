@@ -1,0 +1,8 @@
+# allowlist: only send what the Dockerfile needs, keeps credentials, certs and .git out of the build context
+*
+!24dev-client.py
+!libs/
+!requirements.txt
+!docker/Dockerfile
+**/__pycache__
+**/*.pyc
